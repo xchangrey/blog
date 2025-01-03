@@ -1,16 +1,56 @@
-import React, { useState } from "react";
+import createDataContext from "./createDataContext";
 
-const BlogContext = React.createContext();
-
-export const BlogProvider = ({ children }) => {
-    const [blogPosts, setBlogPosts] = useState([])
-    const addBlogPost = () => {
-        setBlogPosts([...blogPosts, { title: `Blog Post #${blogPosts.length + 1}`}])
+const blogReducer = (state, action) => {
+    switch (action.type) {
+        case 'add_blogpost':
+            return [
+                ...state, 
+                { 
+                    id: Math.floor(Math.random() * 99999), 
+                    title: action.payload.title, 
+                    content: action.payload.content 
+                }]
+        case 'delete_blogpost':
+            return state.filter((blogPost) => blogPost.id !== action.payload)
+        case 'show_blogpost':
+            return state.filter((blogPost) => blogPost.id === action.payload)
+        case 'edit_blogpost':
+            return state.map((blogPost) => {
+                return blogPost.id === action.payload.id ? action.payload : blogPost
+            })
+        default:
+            return state
     }
+}
+const addBlogPost = (dispatch) => {
+   return (title, content, callback) => {
+        dispatch({ type: 'add_blogpost', payload: { title, content } })
+        if (callback) {
+            callback()
+        }
+   }
+}
 
-    return <BlogContext.Provider value={{ data: blogPosts, addBlogPost }}>
-        {children}
-    </BlogContext.Provider>
-};
+const deleteBlogPost = (dispatch) => { 
+    return (id) => {
+        dispatch({ type: 'delete_blogpost', payload: id })
+    }
+}
 
-export default BlogContext;
+const editBlogPost = (dispatch) => {
+    return (id, title, content, callback) => {
+        dispatch({ type: 'edit_blogpost', payload: { id, title, content } })
+        if (callback) {
+            callback()
+        }
+    }
+}
+
+
+export const { Context, Provider } = createDataContext(blogReducer, { addBlogPost, deleteBlogPost, editBlogPost}, [
+    {
+        title: 'Test title',
+        content: 'Test content',
+        id: Math.floor(Math.random() * 99999)
+    }
+]);
